@@ -1,24 +1,27 @@
-const surveyPages = [
-  [
-    {
-      id: 1,
-      question: "Which animal do you prefer?",
-      options: [
-        { label: "Cat", image: "/images/cat.jpg", sound: "/sounds/cat.midi" },
-        { label: "Dog", image: "/images/dog.jpg", sound: "/sounds/dog.midi" },
-      ],
-    },
-  ],
-  [
-    {
-      id: 2,
-      question: "Which landscape do you prefer?",
-      options: [
-        { label: "Mountains", image: "/images/mountains.jpg", sound: "/sounds/mountains.midi" },
-        { label: "Beach", image: "/images/beach.jpg", sound: "/sounds/beach.midi" },
-      ],
-    },
-  ],
+const surveyData = [
+  {
+    type: "imagePair",
+    question: "Which image do you prefer?",
+    options: [
+      { id: "A", image: "imageA.jpg" },
+      { id: "B", image: "imageB.jpg" },
+    ],
+  },
+  {
+    type: "imageSound",
+    question: "How would you rate this image & sound combination?",
+    image: "example.jpg",
+    sound: "example.mp3",
+    options: [1, 2, 3, 4, 5], // Rating scale
+  },
+  {
+    type: "imagePair",
+    question: "Which image do you prefer?",
+    options: [
+      { id: "C", image: "imageA.jpg" },
+      { id: "D", image: "imageB.jpg" },
+    ],
+  },
 ];
 
-export default surveyPages;
+export default surveyData;

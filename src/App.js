@@ -1,72 +1,109 @@
-import { useState } from "react";
+import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setUsername, nextPage, saveAnswer, prevPage, resetSurvey } from "./store";
-import surveyPages from "./surveyData";
+import { setUsername, nextPage, prevPage, recordAnswer, resetSurvey } from "./store";
+import surveyData from "./surveyData";
 
-function App() {
-  const [name, setName] = useState("");
+const App = () => {
   const dispatch = useDispatch();
-  const page = useSelector((state) => state.survey.page);
-  const username = useSelector((state) => state.survey.username);
-  const answers = useSelector((state) => state.survey.answers);
+  const { username, currentPage, responses } = useSelector(
+    (state) => state.survey
+  );
 
-  const handleStart = () => {
-    if (name.trim()) {
-      dispatch(setUsername(name));
-      dispatch(nextPage());
-    }
+  // Reset & Start Over
+  const handleRestart = () => {
+    localStorage.clear();
+    dispatch(resetSurvey());
   };
+
+  // Landing Page
+  if (currentPage === 0) {
+    return (
+      <div>
+        <h1>Welcome to the Survey</h1>
+        <input
+          type="text"
+          placeholder="Enter your name"
+          onChange={(e) => dispatch(setUsername(e.target.value))}
+        />
+
+        <button onClick={() => dispatch(nextPage()) } disabled={!username}>Start</button>
+      </div>
+    );
+  }
+
+  // Survey Finished Page
+  if (currentPage >= surveyData.length + 1) {
+    return (
+      <div>
+        <h2>Thank you for completing the survey, {username}!</h2>
+        <button onClick={handleRestart}>Restart</button>
+      </div>
+    );
+  }
+
+  // Get Current Question
+  const currentQuestion = surveyData[currentPage - 1];
 
   return (
     <div>
-      {page === 0 ? (
+      <h2>Question {currentPage} of {surveyData.length}</h2>
+      <p>{currentQuestion.question}</p>
+
+      {/* Render different question types */}
+      {currentQuestion.type === "imagePair" && (
         <div>
-          <h2>Welcome to the Survey</h2>
-          <p>Please enter your name to start:</p>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your name"
-          />
-          <button onClick={handleStart}>Start Survey</button>
-        </div>
-      ) : (
-        <div>
-          <h2>Survey</h2>
-          <p>Hi {username}, let's begin!</p>
-          {surveyPages[page - 1].map((q) => (
-            <div key={q.id}>
-              <p>{q.question}</p>
-              {q.options.map((option) => (
-                <label key={option.label} style={{ display: "block", cursor: "pointer" }}>
-                  <input
-                    type="radio"
-                    name={`question-${q.id}`}
-                    value={option.label}
-                    onChange={() => dispatch(saveAnswer({ questionId: q.id, answer: option.label }))}
-                  />
-                  <img src={option.image} alt={option.label} style={{ width: 150, height: 150, margin: "10px" }} />
-                  <audio controls>
-                    <source src={option.sound} type="audio/midi" />
-                    Your browser does not support the audio tag.
-                  </audio>
-                </label>
-              ))}
-            </div>
+          {currentQuestion.options.map((option) => (
+            <label key={option.id}>
+              <input
+                type="radio"
+                name={`question-${currentPage}`}
+                value={option.id}
+                checked={responses[currentPage] === option.id}
+                onChange={() =>
+                  dispatch(recordAnswer({ page: currentPage, answer: option.id }))
+                }
+              />
+              <img src={option.image} alt={`Option ${option.id}`} width="100" />
+            </label>
           ))}
+        </div>
+      )}
+
+      {currentQuestion.type === "imageSound" && (
+        <div>
+          <img src={currentQuestion.image} alt="Question Image" width="200" />
+          <audio controls>
+            <source src={currentQuestion.sound} type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
           <div>
-            {page > 1 && <button onClick={() => dispatch(prevPage())}>Previous</button>}
-            {page < surveyPages.length ? (
-              <button onClick={() => dispatch(nextPage())}>Next</button>
-            ) : (
-              <button onClick={() => dispatch(resetSurvey())}>Restart</button>
-            )}
+            {currentQuestion.options.map((value) => (
+              <label key={value}>
+                <input
+                  type="radio"
+                  name={`question-${currentPage}`}
+                  value={value}
+                  checked={responses[currentPage] === value}
+                  onChange={() =>
+                    dispatch(recordAnswer({ page: currentPage, answer: value }))
+                  }
+                />
+                {value}
+              </label>
+            ))}
           </div>
         </div>
       )}
+
+      <div>
+        {currentPage > 0 && <button onClick={() => dispatch(prevPage())}>Back</button>}
+        <button onClick={() => dispatch(nextPage())} disabled={!responses[currentPage]}>
+          Next
+        </button>
+        <button onClick={handleRestart}>Restart</button>
+      </div>
     </div>
   );
-}
+};
 
 export default App;

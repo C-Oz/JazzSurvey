@@ -1,56 +1,57 @@
 import { configureStore, createSlice } from "@reduxjs/toolkit";
 
-// Load saved state from local storage
-const loadState = () => {
-  try {
-    const serializedState = localStorage.getItem("surveyState");
-    return serializedState ? JSON.parse(serializedState) : undefined;
-  } catch (e) {
-    return undefined;
-  }
-};
+// Try loading persisted state
+const persistedState = localStorage.getItem("reduxState");
 
-const initialState = loadState() || {
-  username: "",
-  page: 0,
-  answers: {},
-};
+let initialState;
+try {
+  initialState = persistedState ? JSON.parse(persistedState) : undefined;
+} catch (error) {
+  console.error("Corrupt local storage detected, resetting state...");
+  localStorage.clear();
+  initialState = undefined;
+}
 
+// Define survey slice
 const surveySlice = createSlice({
   name: "survey",
-  initialState,
+  initialState: initialState || {
+    username: "",
+    currentPage: 0,
+    responses: {},
+  },
   reducers: {
     setUsername: (state, action) => {
       state.username = action.payload;
     },
     nextPage: (state) => {
-      state.page += 1;
+      state.currentPage += 1;
     },
     prevPage: (state) => {
-      state.page -= 1;
+      if (state.currentPage > 0) state.currentPage -= 1;
     },
-    saveAnswer: (state, action) => {
-      const { questionId, answer } = action.payload;
-      state.answers[questionId] = answer;
+    recordAnswer: (state, action) => {
+      const { page, answer } = action.payload;
+      state.responses[page] = answer;
     },
-    resetSurvey: (state) => {
-      state.username = "";
-      state.page = 0;
-      state.answers = {};
-    },
+    resetSurvey: () => ({
+      username: "",
+      currentPage: 0,
+      responses: {},
+    }),
   },
 });
 
-export const { setUsername, nextPage, prevPage, saveAnswer, resetSurvey } = surveySlice.actions;
-
+// Save state to local storage on changes
 const store = configureStore({
-  reducer: {
-    survey: surveySlice.reducer,
-  },
+  reducer: { survey: surveySlice.reducer },
 });
 
 store.subscribe(() => {
-  localStorage.setItem("surveyState", JSON.stringify(store.getState().survey));
+  localStorage.setItem("reduxState", JSON.stringify(store.getState().survey));
 });
 
+// Export actions and store
+export const { setUsername, nextPage, prevPage, recordAnswer, resetSurvey } =
+  surveySlice.actions;
 export default store;
